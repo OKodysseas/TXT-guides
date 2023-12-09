@@ -1,0 +1,202 @@
+By Odysseas, 
+2023-06-16
+
+Summary: We go over the math and theory of deriving a 3D vector for the mouse
+based on its location, camera lens and position.
+===============================================================================
+
+In OpenGL, Normalized Device Coordinates (also known as clip space) cover the
+ranges of -1 to +1 for X, Y and Z (the projection inside a cube centered at 
+the origin). The plane formed by the X and Y at Z = -1 is what we call the 
+near plane, the face of the camera. The X and Y values on the near plane 
+for each vertex determine where it will lie on the screen, while the Z 
+coordinate is used for depth testing, ensuring we render the nearest fragments
+in front of the further fragments.
+
+                               X     Z
+                               |    /
+                               |   /
+                           +---|-------+ (1,1,1)
+                          /    |      /|
+                         /           / |
+                        +-----------+  |
+                 _______|\\\Near\\\\| ____________Y
+                        |\\\Plane\\\|  +
+                        |\\\\/\\\\\\| /
+                        |\\\/\\\\\\\|/
+             (-1,-1,-1) +--/--------+ 
+                          /   |
+
+
+However, clip space is not the last coordinate space we transform our data.
+The fragments are further transformed into screen space coordinates. What more,
+whenever we querry for the position of the mouse, that is also given in screen
+space coordinates. This coordinate space is defined by the OpenGL viewport, 
+declared as:
+
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+
+Where x and y specify the lower left corner of the viewport rectangle, in 
+pixels, and width and height specify how big the viewport is. A common value 
+for the viewport is to set x and y to (0,0) which maps to the bottom left 
+corner of the window, while setting width and height to the size of the window,
+thus rendering over the entire window.
+
+                       +------------+
+                       |            |
+                       |            | Height
+                       |   Width    |
+                 (0,0) +------------+
+
+Based on the values supplied to glViewport, this coordinate space applies an 
+affine transform of x and y from normalized device coordinates to window 
+coordinates. Let x1, y1 be the normalized device coordinates (-1 to 1 range). 
+Then the screen space coordinates x2, y2 are given by:
+
+x2 = (x1 + 1) * 0.5 * width + x.
+y2 = (y1 + 1) * 0.5 * height + y.
+
+When the viewport lower left corner is set to (0,0) then x2 and y2 equal:
+
+x2 = (x1 + 1) * 0.5 * width
+y2 = (y1 + 1) * 0.5 * height
+
+This gives x2 a range of (0, width) and y2 a range of (0, height).
+
+To transform from screen space coordinates to normalized device coordinates, 
+we thus calculate:
+
+x1 = (2*(x2 - x) / width) - 1.
+y1 = (2*(y2 - y) / height) - 1.
+
+When the viewport lower left corner is set to (0,0) then x1 and y1 equal:
+
+x1 = (2*x2 / width) - 1.
+y1 = (2*y2 / height) - 1.
+
+-------------------------------------------------------------------------------
+            GETTING THE DIRECTION VECTOR OFF THE MOUSE POSITION
+-------------------------------------------------------------------------------
+
+The mouse position is given in screen space coordinates. We need to do the 
+following transformations before we can find the direction vector:
+
+Screen Space --> Normalized Device Coordinates --> View Space --> World Space.
+
+We just showed how to transform screen space coordinates to NDC coordinates.
+But how do we transform NDC to view space coordinates?
+
+For that, we need to go back to how the projection at the near plane works.
+Consider the following cross sections:
+
+                 |Y                                 |Z
+          ......t|                                  |
+          |\     |                                  |
+          | \    |                                  |
+          |  \   |                                  |
+          |   \  |                                  |
+          |    \ |                                  |
+     _____|_____\|__________Z             ___l______|______r___X
+        -1|     /|                           .     /|\     .
+          |    / |                           .    /_|_\    .
+          |   /  |                           .   /  |  \   .
+          |  /   |                           .  /u/2|   \  .
+          | /    |                           . /    |    \ .
+          |/     |                           ./_____|_____\.
+          ......b|                                -1|
+                 |                                  |
+
+Where u/2 is half the field of view for that camera, l is the left side of our
+near plane, r is the right side, t is the top and b is the bottom side, as 
+shown in the diagram:             
+
+                                  |Y
+                                 t|
+                    +-------------|--------------+
+                    |             |              |
+                    |             |              |
+                   l|             |              |r   X
+               -----+-------------+--------------+-----
+                    |             |              |
+                    |             |              |
+                    |             |              |
+                    +-------------|--------------+
+                                 b|
+                                  |
+
+
+Remember that the near plane lies at Z = -1. Given the field of view of the 
+camera, u, and the screen aspect ratio, a, we can find the values for l, r, t 
+and b as follows:
+
+r =    tan(u/2)
+l =   -tan(u/2)
+t =  a*tan(u/2)
+b = -a*tan(u/2)
+
+View space camera coordinates at the near plane get mapped to NDC coordinates
+via the following equation:
+
+x1 = (x0 - l) * (2 / (r - l)) - 1
+y1 = (y0 - l) * (2 / (r - l)) - 1
+
+Thus to revert from NDC to view space coordinates, we apply the the reverse 
+transformation:
+
+x0 = 0.5 * (x1 + 1) * (r - l) + l
+y0 = 0.5 * (y1 + 1) * (r - l) + l
+
+With x0 and y0, we can now formulate the point in view space, p_v:
+
+      +- -+
+      | x0|
+p_v = | y0|
+      | -1|
+      | 1 |
+      +- +-
+
+Now that we have p_v, we can finally get the equivalent point in world space,
+p_w, by multiplying p_v with the view matrix. Why the view matrix and not its
+inverse? The reader should recall that when transforming our coordinates from
+world space to view space, we multiply everything by the inverse of the view
+matrix. Thus to go back from view space coordinates to world space coordinates,
+we must multiply by the inverse of the inverse of the view matrix, which is
+the view matrix itself!
+
+p_w = view_mat * p_v.
+
+And at last, we can get the unit vector of our mouse, m_dir, by computing the
+following:
+
+m_dir = normalize(p_w - cam_pos)
+
+That's quite a lot of steps for getting the direction vector off the mouse 
+position. Let's summarize:
+
++------------------------------------------------------------------+
+|   Given:                                                         |
+|       * A viewport with a lower left corner set to (x,y) and     |
+|         knowing its width and height                             |
+|       * The mouse screen space coordinates, (x2,y2)              |
+|       * The camera field of view angle, u                        |
+|       * The view matrix, view_mat                                |
+|                                                                  |
+|   a = width / height                                             |
+|   r =    tan(u/2)                                                |
+|   l =   -tan(u/2)                                                |
+|   t =  a*tan(u/2)                                                |
+|   b = -a*tan(u/2)                                                |
+|                                                                  |
+|   x1 = (2*(x2 - x) / width) - 1.                                 |
+|   y1 = (2*(y2 - y) / height) - 1.                                |
+|                                                                  |
+|   x0 = 0.5 * (x1 + 1) * (r - l) + l                              |
+|   y0 = 0.5 * (y1 + 1) * (r - l) + l                              |
+|                                                                  |
+|   p_v = [x0 y0 -1  1]                                            |
+|   p_w = view_mat * p_v.                                          |
+|   m_dir = normalize(p_w - cam_pos)                               |
++------------------------------------------------------------------+
+
+
+

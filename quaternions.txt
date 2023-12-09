@@ -1,0 +1,401 @@
+By Odysseas,
+2023-06-18
+
+Summary: We go over some of the math, theory and formulas regarding rotations
+in 3D space and quaternions.
+===============================================================================
+Chapter 1: The mathematics of rotation:
+===============================================================================
+
+We will first start not with quaternions but with traditional vector 
+mathematics. As with many discoveries in mathematics, it usually starts with 
+one man, Euler. Euler's rotation theorem proves the following (1776):
+
+" When a sphere is moved around its centre it is always possible to find a 
+diameter whose direction in the displaced position is the same as in the 
+initial position. "
+
+Quoting Wikipedia, this means in three-dimensional space, any displacement 
+of a rigid body such that a point on the rigid body remains fixed, is 
+equivalent to a single rotation about some axis that runs through the 
+fixed point. It also means that the composition of two rotations is 
+also a rotation. Therefore the set of rotations has a group structure, 
+known as a rotation group.
+
+Hence, given that we can achieve any rotation in 3D space through the use of 
+a unit axis, a, and an angle, u, we shall derive the formula to rotate any 
+vector, commonly known as Rodrigues' rotation formula.
+
+Imagine the following scenario of rotating vector v about the unit axis a by
+an angle of u:
+
+   v/
+   /
+  /
+ / 
+/)____a
+
+We can break down v into parallel and perpendicular components relative to the
+axis a:
+
+proj(v,a) = dot(v,a)*a / |a|^2
+perp(v,a) = v - proj(v,a)
+
+For notational convenience, let us say that:
+v_0 = proj(v,a)
+v_1 = perp(v,a)
+
+Let us also define the rotated v about axis a and angle u as v'.
+
+When rotating v about axis a, the projection of v onto a is parallel to it, 
+and thus it does not change at all.
+
+As for the perpendicular component, we can calculate where it will be after 
+rotating it by an angle u about axis a. Let us define this rotated component 
+as v_1'. The following then applies:
+
+v' = v_0 + v_1'
+
+To find v_1' we must first find the two basis vectors of the plane this 
+rotated component will end up on. One of these will be just v_1 itself. When
+we rotate by 0 degrees for example, v_1' = v_1. The second basis of this plane
+is given by cross(v_1,a). This vector is perpendicular to both v_1 and a,
+with a magnitude of |v_1|*|a|*sin(90) = |v_1|. When we rotate by 90 degrees 
+for example, v_1' = cross(v_1,a).
+
+|v_1                      v_1' |v_1
+|                           \  |
+|                            \u|
+|                             \|
+|]____a        cross(v_1,a)____.a
+
+v_1' = cos(u)*v_1 + cos(90-u)*cross(v_1,a) =>
+v_1' = cos(u)*v_1 + sin(u)*cross(v_1,a)
+
+We now have all that we need to calculate our rotated vector v':
+
+v' = v_0 + v_1' =>
+v' = v_0 + cos(u)*v_1 + sin(u)*cross(v_1,a)
+
+Now note the following simplification: We claim that:
+cross(v,a) = cross(v_1,a)
+To prove that claim, we must first recall the following identity of 
+the cross product: For vectors P, Q and R, the following applies:
+cross(P+Q,R) = cross(P,R) + cross(Q,R). Thus:
+cross(v,a) = cross(v_0+v_1,a) = cross(v_0,a) + cross(v_1,a).
+Since v_0 is parallel to the axis a, cross(v_0,a) = 0. Hence,
+cross(v,a) = cross(v_1,a).
+
+Using this simplification we just proven, we have:
+v' = v_0 + cos(u)*v_1 + sin(u)*cross(v,a) =>
+v' = proj(v,a) + cos(u)*(v-proj(v,a)) + sin(u)*cross(v,a) =>
+v' = dot(v,a)*a + cos(u)*v -cos(u)*dot(v,a)*a + sin(u)*cross(v,a) =>
+
++----------------------------------------------------------------------+
+|                                                                      |
+|      v' = cos(u)*v + (1-cos(u))*dot(v,a)*a + sin(u)*cross(v,a)       |
+|                                                                      |
++----------------------------------------------------------------------+
+
+We have now derived Rodrigues' rotation formula.
+
+===============================================================================
+Chapter 2: The basics of Quaternions:
+===============================================================================
+
+As we know, every quaternion formula can be derived based on the following:
+
+i^2 = j^2 = k^2 = i*j*k = -1.
+
+We represent quaternions as 4 dimensional entities, consisting of a scalar, s,
+and a vector, v, e.g.
+
+q_0 = (v_0, s_0).
+
+Skipping over the derivation, we should always remember that multiplying two
+quaternions together, q_0 and q_1, yields as follows:
+
++--------------------------------------------------------------------------+
+|  q_0*q_1 = (s_0*v_1 + s_1*v_0 + cross(v_0,v_1), s_0*s_1 - dot(v_0,v_1))  |
++--------------------------------------------------------------------------+
+
+From the above, we can easily also derive the following:
+
++---------------------------------------------------------------------------+
+|  The inverse of a quaternion q = (v, s) is given by inv(q) = (-v, s)/|q|  |
++---------------------------------------------------------------------------+
+
+Proof:
+q * inv(q) = ((s*v - s*v + cross(v,-v))/|q|, (s*s - dot(v,-v)/|q|)
+= (0/|q|, (s^2 + |v|^2)/|q|)
+= (0, 1)
+
+===============================================================================
+Chapter 3: Euler's formula for Quaternions:
+===============================================================================
+
+Euler's formula for complex number can be expanded to quaternions, again 
+proving it using the Tailor expansion of e^x.
+
++-----------------------------------------------------------------------+
+|    e^(a+bi+cj+dk) = e^a( cos(|v|) + (sin(|v|)/|v|)*(bi + cj + dk) )   |
+|         Where |v| = sqrt(b^2 + c^2 + d^2)                             |
++-----------------------------------------------------------------------+
+
+We can see using the quaternion formula from above that when c = 0 and d = 0,
+we get exactly the same formula as Euler's formula of the complex numbers:
+
+e^(a+bi) = e^a(cos(b) + isin(b))
+
++-----------------------------------------------------------------------+
+|     When |v| = 1, and a = 0, and we have a scalar angle u, we have:   |
+|                                                                       |
+|                 e^(u*(v, 0)) = cos(u) + sin(u)*v                      |
++-----------------------------------------------------------------------+
+
+Knowing how Euler's formula directly corresponds to rotations in 2D space,
+we can sort of suspect how the above formula corresponds to a rotation 
+about axis v with an angle defined by the magnitude of v. We will now derive
+the exact formula for rotations about an axis using quaternions, showing its
+equivalence to Rodrigues' rotation formula.
+
+===============================================================================
+Chapter 4: Quaternion rotations:
+===============================================================================
+
+Lets first imagine instead of the general rotation formula, that we instead
+rotate vector v_1 with an angle u about a perpendicular unit axis, a. 
+This would of course mean dot(v_1,a) = 0. The equation for the 
+rotated v_1' equates to:
+
+v_1' = cos(u)*v_1 + sin(u)*cross(v_1,a)
+
+We can very easily represent this with quaternions:
+
+v_1' = e^(u*(a, 0)) * (v_1, 0)
+=> v_1' = (sin(u)*a, cos(u)) * (v_1, 0)
+=> v_1' = (cos(u)*v_1 + cross(sin(u)*a,v_1), 0) 
+=> v_1' = (cos(u)*v_1 + sin(u)*cross(v_1,a), 0)
+
+Now let us prove the following:
+e^(u*(a, 0))*(v_1,0) = (v_1,0)*e^(-u*(a, 0)) 
+
+For the left side we know that:
+e^(u*(a, 0)) * (v_1, 0)
+= (sin(u)*a, cos(u)) * (v_1, 0)
+= (cross(sin(u)*a,v) + cos(u)*v_1, -dot(sin(u)*a,v_1))
+Given that a and v are perpendicular to each other, their dot product = 0, so:
+= (cross(sin(u)*a,v_1) + cos(u)*v_1, 0)
+
+We can also calculate for the right side:
+(v_1,0)*e^(-u*(a, 0))
+= (v_1, 0) * (sin(-u)*a, cos(-u))
+We know that cos(u) = cos(-u) while sin(-u) = -sin(u), therefore:
+= (v_1, 0) * (-sin(u)*a, cos(u))
+= (cross(v_1, -sin(u)*a) + cos(u)*v_1, 0)
+We know cross(v_1, -sin(u)*a) = -cross(v_1, sin(u)*a) = cross(sin(u)*a, v_1)
+Therefore:
+= (cross(sin(u)*a,v_1) + cos(u)*v_1, 0)
+
++----------------------------------------------------------------------+
+| Thus we've proven that when the unit axis a is perpendicular to v_1: |
+|            e^(u*(a, 0))*(v_1,0) = (v_1,0)*e^(-u*(a, 0))              |
++----------------------------------------------------------------------+
+We also showed that:
+e^(-u*(a, 0)) = (-sin(u)*a, cos(u)) = inv(e^(u*(a, 0))).
+
+Now imagine vector v_0 being parallel to the unit axis a. Then let us prove
+that the following commutes:
+e^(u*(a,0))*(v_0,0) = (v_0,0)*e^(u*(a,0))
+
+For the left side we know that:
+e^(u*(a,0)) * (v_0, 0)
+= (sin(u)*a, cos(u)) * (v_0, 0)
+= (cross(sin(u)*a,v_0) + cos(u)*v_0, -dot(sin(u)*a, v_0))
+Given that v_0 is parallel to a, cross(sin(u)*a,v_0) = 0, and therefore:
+= (cos(u)*v_0, -dot(sin(u)*a, v_0))
+
+For the right side we can also easily prove that:
+(v_0, 0) * e^(u*(a,0)) 
+= (cos(u)*v_0, -dot(sin(u)*a, v_0))
+
++----------------------------------------------------------------------+
+|     Thus we've proven that when unit axis a is parallel to v_0:      |
+|            e^(u*(a,0))*(v_0,0) = (v_0,0)*e^(u*(a,0))                 |
++----------------------------------------------------------------------+
+
+For notational convenience, let us define e^(0.5*u*(a,0)) as quaternion q.
+
+Then for any vector v and any unit axis a, rotating v about axis a by angle 
+u is given by Rodrigues' rotation formula as:
+
+v' = v_0 + cos(u)*v_1 + sin(u)*cross(v_1,a)
+Where v_0 is the parallel component of v relative to a, 
+while v_1 is the perpendicular.
+
+With quaternions we can rewrite it as: 
+v' = (v_0,0) + e^(u*(a,0))*(v_1,0) =>
+v' = q*inv(q)*(v_0,0) + q*q*(v_1,0) =>
+
+Using the parallel proof from above, we know that:
+q*inv(q)*(v_0,0) = q*(v_0,0)*inv(q)
+
+Using the perpendicular proof from above, we know that:
+q*q*(v_1,0) = q*(v_1,0)*inv(q)
+
+Therefore:
+v' = q*(v_0,0)*inv(q) + q*(v_1,0)*inv(q) =>
+v' = q * ( (v_0,0) + (v_1,0) ) * inv(q) =>
+v' = q * (v,0) * inv(q)
+
++--------------------------------------------------------------------------+
+| Thus the quaternion formula to rotate any vector v about any unit axis a |
+| by an angle of u is given by:                                            |
+|                                                                          |
+|                        v' = q * (v,0) * inv(q)                           |
+| Where:                                                                   |
+| q      = e^(0.5*u*(a,0))  = (sin(0.5*u)*a, cos(0.5*u))                   |
+| inv(q) = e^(-0.5*u*(a,0)) = (-sin(0.5*u)*a, cos(0.5*u))                  |
++--------------------------------------------------------------------------+
+
+
+===============================================================================
+Chapter 5: Consecutive rotations and quaternions in game engines:
+===============================================================================
+
+In game engines, for each world space object we store the rotation quaternion:
+q = e^(0.5*u*(a,0)) = (sin(0.5*u)*a, cos(0.5*u))
+And whenever it changes, we use it to calculate a new rotation matrix that 
+we set as the rotational component to our object's transformation matrix. 
+
+Why do we just store the rotation quaternion and its equivalent rotation 
+matrix, and not directly apply the rotation via the quaternion equation
+of v' = q * (v,0) * inv(q)? Each model has multiple vertices, and it is 
+simply more efficient to transform all of these vertices via a 4x4 matrix 
+multiplication with a 4xn matrix multiplication, compared to applying the 
+quaternion rotation formula n times.
+
+Then why do we even bother storing the rotation quaternion for each object,
+if we always end up having to convert it to a rotation matrix? Why not just
+use matrices and a matrix equation when wanting to rotate about an axis and
+angle? 
+
+The reason why we even bother with quaternions is they they have some very 
+useful properties:
+    1) We can very easily animate between two rotations via a simple linear 
+        interpolation between the two quaternions. 
+    2) We can also very easily differentiate quaternions, making them ideal 
+        for rigid body physics. 
+    3) Most important of all, applying multiple consecutive rotations to an 
+        object using quaternions yields a far better type of accumulating 
+        error than with matrices.
+        When composing several rotations on a computer, rounding errors 
+        necessarily accumulate. A quaternion that is slightly off still 
+        represents a rotation while a matrix that is slightly off may not be 
+        orthogonal anymore, with the basis vectors not perpendicular to each
+        other. Once the rotation matrix is far enough away from being 
+        orthogonal, it can start to visibly deform the geometry that it's 
+        applied to via skew and scaling. This would require us to 
+        orthonormalize the rotation matrix, which is expensive.
+
+On the topic of consecutive quaternion rotations, suppose we have a vector v. 
+When applying multiple quaternion rotations upon v, such as two rotations, 
+q_1 and q_2, the following applies:
+
+v' = q_2 * q_1 * (v,0) * inv(q_1) * inv(q_2)
+
+If we can prove that inv(q_2 * q_1) = inv(q_1) * inv(q_2) then we could 
+say that for q_3 = q_2 * q_1 the following applies:
+
+v' = q_3 * (v,0) * inv(q_3).
+
+Proof that inv(q_2 * q_1) = inv(q_1) * inv(q_2):
+
+For the left hand side, we have:
+inv(q_2*q_1) = inv(s_2*v_1 + s_1*v_2 + cross(v_2,v_1), s_1*s_2 + dot(v_2,v_1))
+= (-s_2*v_1 - s_1*v_2 - cross(v_2,v_1), s_1*s_2 + dot(v_2,v_1))
+
+For the right hand side, we have:
+inv(q_1) * inv(q_2) = (-v_1,s_1) * (-v_2,s_2)
+= (-s_2*v_1 - s_1*v_2 + cross(-v_1,-v_2), s_1*s_2 + dot(-v_1,-v_2))
+= (-s_2*v_1 - s_1*v_2 + cross(v_1,v_2), s_1*s_2 + dot(v_1,v_2))
+= (-s_2*v_1 - s_1*v_2 - cross(v_2,v_1), s_1*s_2 + dot(v_2,v_1))
+
++-------------------------------------------------------+
+| We have therefore proven that:                        |
+| inv(q_2 * q_1) = inv(q_1) * inv(q_2)                  |
+|                                                       |
+| And:                                                  |
+| v' = q_2 * q_1 * (v,0) * inv(q_1) * inv(q_2) =>       |
+| v' = q_3 * (v,0) * inv(q_3)                           |
+| Where q_3 = q_2 * q_1                                 |
++-------------------------------------------------------+
+
+===============================================================================
+Chapter 6: Quaternion look_at:
+===============================================================================
+Our goal in this chapter is to find a quaternion q such that applying 
+q * (v_0, 0) * inv(q) yields (v_1, 0). This has the effect of rotating vector
+v_0 to look at vector v_1.
+
+    v_0 /
+       /     . m
+      /   .
+     / .
+   a.)_______ v_1
+
+
+If we try multiplying the quaternion for v_1 with the quaternion for v_0, 
+we get the following:
+
+(v_1,0) * (v_0,0) = (cross(v_1,v_0), -dot(v_1,v_0))
+=> (v_1,0) * (v_0,0) = (-cross(v_0,v_1), -dot(v_0,v_1))
+
+Recall the following identities for the cross and dot product:
+    cross(a,b) = |a|*|b|*cos(u)*n, where n is the perpendicular axis 
+        for a and b, with u being the angle between them.
+    dot(a,b) = |a|*|b|*sin(u) where u is the angle between a and b.
+
+Thus:
+=> (v_1,0) * (v_0,0) = (-|v_0|*|v_1|*cos(u)*a, -|v_0|*|v_1|*sin(u))
+Where a is the unit length axis perpendicular to v_0 and v_1, while u is 
+the angle between the two vectors.
+
+If v_0 and v_1 are normalized, then:
+(v_1,0) * (v_0,0) = (-cos(u)*a, -sin(u))
+
+This is identical to e^(u*(a,0)). It is indeed very close to the rotation 
+quaternion that we want. As for the negative sign, it does not alter the 
+rotation, as (-cos(u)*a, -sin(u)) = (-cos(-u)*a, sin(-u)) which represents 
+rotating by -u angle about axis -a, which is the same as rotating by an angle
+of u about axis a.
+
+All we need now is the same as the above but instead of rotating by u, we 
+want to rotate by 0.5*u such that it is in line with the standard quaternion 
+rotation formula of v' = q * (v,0) * inv(q).
+
+We can simply compute the midway vector between v_0 and v_1, which we call m:
+m = 0.5*(v_0 + v_1)
+
+The angle m forms between v_0 or v_1 is 0.5*u. Normalizing m gives us the 
+vector we need to multiply v_0 by to point it at v_1, where m_norm is set to: 
+m_norm = (v_0 + v_1) / (|v_0| + |v_1|).
+
+And hence the multiplication of the following yields our desired quaternion:
+(m_norm,0) * (v_0,0) = (cos(0.5*u)*a, sin(0.5*u)) = e^(0.5*u*(a,0))
+Where u is the angle between v_0 and v_1 and a is the unit length axis 
+perpendicular to v_0 and v_1.
+
++--------------------------------------------------------------------------+
+|   Algorithm to get the quaternion for rotating vector v_0 to point at    |
+|   vector v_1:                                                            |
+|                                                                          |
+|   m_norm = normalize(v_0 + v_1)                                          |
+|   q = (m_norm, 0) * (v_0, 0)                                             |
+|   return q                                                               |
+|                                                                          |
+|   Where q * (v_0, 0) * inv(q) = (v_1, 0)                                 |
++--------------------------------------------------------------------------+
+
+
+
