@@ -280,7 +280,7 @@ if we always end up having to convert it to a rotation matrix? Why not just
 use matrices and a matrix equation when wanting to rotate about an axis and
 angle? 
 
-The reason why we even bother with quaternions is they they have some very 
+The reason why we even bother with quaternions is that they have some very
 useful properties:
     1) We can very easily animate between two rotations via a simple linear 
         interpolation between the two quaternions. 
@@ -290,7 +290,7 @@ useful properties:
         object using quaternions yields a far better type of accumulating 
         error than with matrices.
         When composing several rotations on a computer, rounding errors 
-        necessarily accumulate. A quaternion that is slightly off still 
+        inevitably accumulate. A quaternion that is slightly off still
         represents a rotation while a matrix that is slightly off may not be 
         orthogonal anymore, with the basis vectors not perpendicular to each
         other. Once the rotation matrix is far enough away from being 
