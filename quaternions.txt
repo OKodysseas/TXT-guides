@@ -122,12 +122,12 @@ quaternions together, q_0 and q_1, yields as follows:
 From the above, we can easily also derive the following:
 
 +---------------------------------------------------------------------------+
-|  The inverse of a quaternion q = (v, s) is given by inv(q) = (-v, s)/|q|  |
+| The inverse of a quaternion q = (v, s) is given by inv(q) = (-v, s)/|q|^2 |
 +---------------------------------------------------------------------------+
 
 Proof:
-q * inv(q) = ((s*v - s*v + cross(v,-v))/|q|, (s*s - dot(v,-v)/|q|)
-= (0/|q|, (s^2 + |v|^2)/|q|)
+q * inv(q) = ((s*v - s*v + cross(v,-v))/|q|^2, (s*s - dot(v,-v)/|q|^2)
+= (0/|q|^2, (s^2 + |v|^2)/|q|^2)
 = (0, 1)
 
 ===============================================================================
