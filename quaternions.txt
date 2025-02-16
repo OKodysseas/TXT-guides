@@ -138,14 +138,14 @@ Euler's formula for complex number can be expanded to quaternions, again
 proving it using the Tailor expansion of e^x.
 
 +-----------------------------------------------------------------------+
-|    e^(a+bi+cj+dk) = e^a( cos(|v|) + (sin(|v|)/|v|)*(bi + cj + dk) )   |
+| e^(a+bi+cj+dk) = (e^a) * ( cos(|v|) + (sin(|v|)/|v|)*(bi + cj + dk) ) |
 |         Where |v| = sqrt(b^2 + c^2 + d^2)                             |
 +-----------------------------------------------------------------------+
 
 We can see using the quaternion formula from above that when c = 0 and d = 0,
 we get exactly the same formula as Euler's formula of the complex numbers:
 
-e^(a+bi) = e^a(cos(b) + isin(b))
+e^(a+bi) = (e^a) * (cos(b) + isin(b))
 
 +-----------------------------------------------------------------------+
 |     When |v| = 1, and a = 0, and we have a scalar angle u, we have:   |
